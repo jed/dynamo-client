@@ -33,7 +33,7 @@ This creates a database instance for the given DynamoDB host, which can currentl
 
 Your AWS credentials (which can be found in your [AWS console](https://portal.aws.amazon.com/gp/aws/securityCredentials)) can be specified in one of two ways:
 
-1. As the second argument, like this:
+- As the second argument, like this:
 
 ```javascript
 dynamo.createClient(dynamodb.us-east-1.amazonaws.com, {
@@ -42,7 +42,7 @@ dynamo.createClient(dynamodb.us-east-1.amazonaws.com, {
 })
 ```
 
-2. From `process.env`, such as like this:
+- From `process.env`, such as like this:
 
 ```
 export AWS_SECRET_ACCESS_KEY="<your-secret-access-key>"
