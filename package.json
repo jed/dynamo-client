@@ -1,15 +1,27 @@
 {
   "name": "dynamo-client",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A low-level client for accessing DynamoDB",
+  "author": "Jed Schmidt <tr@nslator.jp> (http://jed.is)",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "keywords": [
+    "amazon",
+    "aws",
+    "DynamoDB",
+    "dynamo",
+    "nosql",
+    "database"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/jed/dynamo-client.git"
   },
-  "author": "Jed Schmidt",
-  "license": "BSD"
+  "license": "BSD",
+  "devDependencies": {
+    "should": "~0.6.3",
+    "mocha": "~1.3.0"
+  },
+  "scripts": {
+    "test": "mocha test.js -b -t 100s -R list"
+  }
 }
