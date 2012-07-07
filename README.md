@@ -12,7 +12,7 @@ var dynamo = require("dynamo-client")
   , host   = "dynamodb.us-east-1.amazonaws.com"
   , db     = dynamo.createClient(host)
 
-db.request("ListTables", {}, function(err, data) {
+db.request("ListTables", null, function(err, data) {
   console.log(data.TableNames.length + " tables found.")
 })
 ```
