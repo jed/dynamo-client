@@ -36,7 +36,7 @@ Your AWS credentials (which can be found in your [AWS console](https://portal.aw
 - As the second argument, like this:
 
 ```javascript
-dynamo.createClient(dynamodb.us-east-1.amazonaws.com, {
+dynamo.createClient("dynamodb.us-east-1.amazonaws.com", {
   secretAccessKey: "<your-secret-access-key>",
   accessKeyId: "<your-access-key-id>"
 })
