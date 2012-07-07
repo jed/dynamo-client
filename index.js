@@ -9,7 +9,7 @@ function Database(host, credentials) {
 
 Database.prototype = {
   request: function request(target, data, cb) {
-    var req = new Request(this.host, target, data)
+    var req = new Request(this.host, target, data || {})
 
     this.account.sign(req, function(err) {
       if (err) cb(err)
@@ -73,7 +73,7 @@ Request.prototype = {
 }
 
 function RequestHeaders() {
-  this["x-amz-date"] = this["Date"] = (new Date).toUTCString()
+  this["x-amz-date"]   = this["Date"] = (new Date).toUTCString()
   this["Content-Type"] = RequestHeaders.prototype["Content-Type"]
 }
 

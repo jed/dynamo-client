@@ -4,15 +4,15 @@ var should = require("should")
   , db     = dynamo.createClient(host)
 
 describe("Database", function() {
-  describe("#request('ListTables', {}, cb)", function() {
-    it("should return a list of tables", function(done) {
-      db.request("ListTables", {}, function(err, data) {
+  describe("#request('ListTables', null, cb)", function() {
+    it("should return a list of tables", function(ok) {
+      db.request("ListTables", null, function(err, data) {
         should.not.exist(err)
         should.exist(data)
 
         data.should.have.property("TableNames")
 
-        done()
+        ok()
       })
     })
   })
