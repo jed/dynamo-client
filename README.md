@@ -1,6 +1,8 @@
 dynamo-client
 =============
 
+[![Build Status](https://secure.travis-ci.org/jed/dynamo-client.png?branch=master)](http://travis-ci.org/jed/dynamo-client)
+
 This is a low-level client for accessing DynamoDB. It was factored out of [dynamo](http://github.com/jed/dynamo) to separate concerns for better testability.
 
 Example
