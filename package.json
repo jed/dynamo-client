@@ -22,6 +22,6 @@
     "mocha": "~1.3.0"
   },
   "scripts": {
-    "test": "mocha test.js -b -t 50s -R list"
+    "test": "mocha test.js -b -t 100s -R list"
   }
 }
