@@ -17,8 +17,6 @@ Database.prototype.request = function(target, data, cb) {
       if (err) cb(err)
 
       else req.send(function(err, data) {
-        console.log("retry #" + i)
-
         if (
           err
           && i < Request.prototype.maxRetries
