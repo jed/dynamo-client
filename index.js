@@ -23,8 +23,7 @@ Database.prototype.request = function(target, data, cb) {
           && (
             err.statusCode == 500 ||
             err.statusCode == 503 ||
-            err.statusCode == 400 &&
-              err.name.slice(-38) == "ProvisionedThroughputExceededException"
+            err.name.slice(-38) == "ProvisionedThroughputExceededException"
           )
         ) {
           setTimeout(retry, 50 << i, db, i + 1)
