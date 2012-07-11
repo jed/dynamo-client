@@ -5,9 +5,9 @@ var should = require("should")
   , name   = "jed_dynamo-client_test"
 
 describe("dynamo", function() {
-  describe("'PutItem' x 100", function() {
+  describe("'PutItem' x 50", function() {
     it("should not throw ProvisionedThroughputExceededException", function(done) {
-      for (var i = 0, n = 100, e = null; i < n; i++) {
+      for (var i = 0, n = 50, e = null; i < n; i++) {
         db.request("PutItem", {
           TableName: name,
           Item: {id: {N: i.toString()}}
