@@ -12,7 +12,7 @@ describe("dynamo", function() {
         KeySchema: {
           HashKeyElement: {
             AttributeName: "id",
-            AttributeType: "S"
+            AttributeType: "N"
           }
         },
         ProvisionedThroughput: {
@@ -41,12 +41,12 @@ describe("dynamo", function() {
     })
   })
 
-  describe("'GetItem' x 100", function() {
+  describe("'PutItem' x 100", function() {
     it("should not throw ProvisionedThroughputExceededException", function(done) {
       for (var i = 0, n = 100, e = null; i < n; i++) {
-        db.request("GetItem", {
+        db.request("PutItem", {
           TableName: name,
-          Key: {HashKeyElement: {S: "404"}}
+          Item: {id: {N: i.toString()}}
         }, function(err, data) {
           if (e) return
 
