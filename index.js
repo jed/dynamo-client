@@ -8,14 +8,31 @@ function Database(host, credentials) {
 }
 
 Database.prototype = {
-  request: function request(target, data, cb) {
-    var req = new Request(this.host, target, data || {})
+  request: function(target, data, cb) {
+    !function retry(db, i) {
+      var req = new Request(db.host, target, data || {})
 
-    this.account.sign(req, function(err) {
-      if (err) cb(err)
+      db.account.sign(req, function(err) {
+        if (err) cb(err)
 
-      else req.send(cb)
-    })
+        else req.send(function(err, data) {
+          if (
+            err
+            && i < Request.prototype.maxRetries
+            && (
+              err.statusCode == 500 ||
+              err.statusCode == 503 ||
+              err.statusCode == 400 &&
+                err.name.slice(-38) == "ProvisionedThroughputExceededException"
+            )
+          ) {
+            setTimeout(retry, 50 << i, db, i + 1)
+          }
+
+          else cb(err, data)
+        })
+      })
+    }(this, 0)
 
     return this
   }
@@ -32,10 +49,11 @@ function Request(host, target, data) {
 }
 
 Request.prototype = {
-  method:   "POST",
-  pathname: "/",
-  target:   "DynamoDB_20111205.",
-  data:     {},
+  method:     "POST",
+  pathname:   "/",
+  target:     "DynamoDB_20111205.",
+  data:       {},
+  maxRetries: 10,
 
   toString: function() {
     return this.method +
