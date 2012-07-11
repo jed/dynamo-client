@@ -1,5 +1,5 @@
 var should = require("should")
-  , dynamo = require("./")
+  , dynamo = require("../")
   , host   = "dynamodb.us-east-1.amazonaws.com"
   , db     = dynamo.createClient(host)
   , name   = "jed_dynamo-client_test"
@@ -38,29 +38,6 @@ describe("dynamo", function() {
 
         else setTimeout(describe, 5000, done)
       })
-    })
-  })
-
-  describe("'PutItem' x 100", function() {
-    it("should not throw ProvisionedThroughputExceededException", function(done) {
-      for (var i = 0, n = 100, e = null; i < n; i++) {
-        db.request("PutItem", {
-          TableName: name,
-          Item: {id: {N: i.toString()}}
-        }, function(err, data) {
-          if (e) return
-
-          if (err) return done(e = err)
-
-          --n || done()
-        })
-      }
-    })
-  })
-
-  describe("'DeleteTable'", function() {
-    it("should delete the table", function(done) {
-      db.request("DeleteTable", {TableName: name}, done)
     })
   })
 })
