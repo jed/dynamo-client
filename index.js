@@ -2,12 +2,16 @@ var http   = require("http")
   , https  = require("https")
   , crypto = require("crypto")
 
-function Database(host, credentials) {
-  this.host    = host
-  this.account = new Account(credentials)
+function Database() {
+  Database.prototype.init.apply(this, arguments)
 }
 
 Database.prototype = {
+  init: function(host, credentials) {
+    this.host    = host
+    this.account = new Account(credentials)
+  },
+
   request: function(target, data, cb) {
     !function retry(db, i) {
       var req = new Request(db.host, target, data || {})
