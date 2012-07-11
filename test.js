@@ -57,4 +57,10 @@ describe("dynamo", function() {
       }
     })
   })
+
+  describe("'DeleteTable'", function() {
+    it("should delete the table", function(done) {
+      db.request("DeleteTable", {TableName: name}, done)
+    })
+  })
 })
