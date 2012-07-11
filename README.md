@@ -76,7 +76,10 @@ The data object needs to serialize into the [DynamoDB JSON format](http://docs.a
 
 The callback is a function with the usual node-style `(err, data)` signature, in which data is an object parsed from the JSON returned by DynamoDB.
 
-TODO
-----
+The following requests are automatically retried with exponential backoff upon failure:
 
-- Build in automatic retry logic according to conventions in other libraries.
+- 500 errors
+- 503 errors
+- 400 ProvisionedThroughputExceededException errors
+
+Retries are attempted up to 10 times by default, but this amount can be changed by setting `dynamo.Request.prototype.maxRetries` to the desired number.
