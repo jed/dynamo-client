@@ -76,7 +76,7 @@ The data object needs to serialize into the [DynamoDB JSON format](http://docs.a
 
 The callback is a function with the usual node-style `(err, data)` signature, in which data is an object parsed from the JSON returned by DynamoDB.
 
-The following requests are automatically retried with exponential backoff upon failure:
+To match [AWS expectations](http://docs.amazonwebservices.com/amazondynamodb/latest/developerguide/ErrorHandling.html#APIRetries), the following requests are automatically retried with exponential backoff (50ms, 100ms, 200ms, 400ms, etc) upon failure:
 
 - 500 errors
 - 503 errors
