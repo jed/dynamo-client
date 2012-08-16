@@ -3,5 +3,4 @@ node_js:
   - 0.8
 env:
   global:
-    - secure: "fsvEsLNFwae3V78pJMGcddcxh/CurQPxDkXjEnVEKRmF3gOWlHTw7ZvMNAFg\nnv5TZd6kXsJWIpbmqoUoa5jefPBlYNHryrlkRgBROrlrtG7c4HtArAOpbHHK\nXGc2QG7+SMMEDmPInknGZLVXPNA+DRdJfsQ9wGMkLiR+KDxNGpM="
-    - secure: "MYGoxOZA4d9pJhbH4OXqgklXcp7u4pqkK+353yqgP95tAdvm2chawYVXaOO0\ntj4uqu7m8KLFlZfQj1DzDIIAg2OK9RIi9VK4GcPxyXDJWNS8l6AqfkImjUnz\ne7QtNghf3UOwPuQHMiNLLRcLMKceT5E8/O7w5qvs1sWqEVCwguA="
+    - secure: "BuhpWxstUJ4S6V1KOwQQYIgNSnWObifiPiGGndWnlJQ4zEctxwCtZlBJZG73\nNwywyiHphtvJQOOnaVoHr6WUWCVEGvzESK/+XdUg7MuQ9gB2RMz6SpcM7mji\nzCa5iHxqMUd8spkraYtWqBOvvaOivzypuB7KTleD6AtcjLybUV4="
