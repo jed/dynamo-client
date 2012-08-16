@@ -1,5 +1,7 @@
 language: node_js
 node_js:
   - 0.8
-# These are IAM credentials limited to Travis-CI, so don't get any funny ideas wiseguy.
-env: AWS_ACCESS_KEY_ID=AKIAJXHTJZLQCOPQERMQ AWS_SECRET_ACCESS_KEY=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
+env:
+  global:
+    - secure: "fsvEsLNFwae3V78pJMGcddcxh/CurQPxDkXjEnVEKRmF3gOWlHTw7ZvMNAFg\nnv5TZd6kXsJWIpbmqoUoa5jefPBlYNHryrlkRgBROrlrtG7c4HtArAOpbHHK\nXGc2QG7+SMMEDmPInknGZLVXPNA+DRdJfsQ9wGMkLiR+KDxNGpM="
+    - secure: "MYGoxOZA4d9pJhbH4OXqgklXcp7u4pqkK+353yqgP95tAdvm2chawYVXaOO0\ntj4uqu7m8KLFlZfQj1DzDIIAg2OK9RIi9VK4GcPxyXDJWNS8l6AqfkImjUnz\ne7QtNghf3UOwPuQHMiNLLRcLMKceT5E8/O7w5qvs1sWqEVCwguA="
