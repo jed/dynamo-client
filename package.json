@@ -1,6 +1,6 @@
 {
   "name": "dynamo-client",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A low-level client for accessing DynamoDB",
   "author": "Jed Schmidt <tr@nslator.jp> (http://jed.is)",
   "main": "index.js",
