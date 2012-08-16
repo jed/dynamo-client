@@ -65,6 +65,8 @@ Request.prototype.toString = function() {
 Request.prototype.send = function(cb) {
   var request = http.request(this, function(res) {
     var json = ""
+    
+    res.setEncoding("utf8")
 
     res.on("data", function(chunk){ json += chunk })
     res.on("end", function() {
