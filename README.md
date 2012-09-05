@@ -78,6 +78,8 @@ If the optional `callback` function is not not provided, an `EventEmitter` insta
 
 If a callback is provided, it is called with the usual `(err, data)` signature upon the `end` event, in which data is an object parsed from the JSON returned by DynamoDB.
 
+Note that a request will not be fired until a callback is provided, or a listener is bound to the returned event emitter.
+
 To match [AWS expectations](http://docs.amazonwebservices.com/amazondynamodb/latest/developerguide/ErrorHandling.html#APIRetries), the following requests are automatically retried with exponential backoff (50ms, 100ms, 200ms, 400ms, etc) upon failure:
 
 - 500 errors
