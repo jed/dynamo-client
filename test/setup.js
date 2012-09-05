@@ -5,6 +5,8 @@ var should = require("should")
   , name   = "jed_dynamo-client_test"
 
 describe("dynamo", function() {
+  it("starting tests at " + JSON.stringify(new Date))
+
   describe("'CreateTable'", function() {
     it("should create a table", function(done) {
       db.request("CreateTable", {
