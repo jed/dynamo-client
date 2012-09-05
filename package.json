@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "description": "A low-level client for accessing DynamoDB",
   "author": "Jed Schmidt <tr@nslator.jp> (http://jed.is)",
-  "main": "index.js",
+  "main": "dynamo_client.js",
   "keywords": [
     "amazon",
     "aws",

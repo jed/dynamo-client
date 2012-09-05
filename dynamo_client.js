@@ -38,12 +38,14 @@ function Database(host, credentials) {
 }
 
 Database.prototype.request = function(target, data, cb) {
+  var database = this
   var emitter = new EventEmitter
+  var i = 0
 
-  !function retry(db, i) {
-    var req = new Request(db.host, target, data || {})
+  emitter.once("newListener", function retry() {
+    var req = new Request(database.host, target, data || {})
 
-    db.account.sign(req, function(err) {
+    database.account.sign(req, function(err) {
       if (err) return emitter.emit("error", err)
 
       req.send(function(err, data) {
@@ -56,7 +58,7 @@ Database.prototype.request = function(target, data, cb) {
             err.name.slice(-38) == "ProvisionedThroughputExceededException"
           )
         ) {
-          return setTimeout(retry, 50 << i, db, i + 1)
+          return setTimeout(retry, 50 << i++)
         }
 
         err
@@ -66,7 +68,7 @@ Database.prototype.request = function(target, data, cb) {
         emitter.emit("end")
       })
     })
-  }(this, 0)
+  })
 
   return emitter.callback(cb)
 }
