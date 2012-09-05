@@ -51,7 +51,7 @@ export AWS_SECRET_ACCESS_KEY="<your-secret-access-key>"
 export AWS_ACCESS_KEY_ID="<your-access-key-id>"
 ```
 
-### db.request(targetName, data, callback)
+### db.request(targetName, data, [callback])
 
 Database instances have only one method, `request`, which takes a target name, data object, and callback.
 
@@ -74,7 +74,9 @@ The target name can be any of the [operations available for DynamoDB](http://doc
 
 The data object needs to serialize into the [DynamoDB JSON format](http://docs.amazonwebservices.com/amazondynamodb/latest/developerguide/DataFormat.html).
 
-The callback is a function with the usual node-style `(err, data)` signature, in which data is an object parsed from the JSON returned by DynamoDB.
+If the optional `callback` function is not not provided, an `EventEmitter` instance is returned that emits either an `error` or `data` event with the appropriate payload parsed from the JSON returned from DynamoDB, followed by an `end` event.
+
+If a callback is provided, it is called with the usual `(err, data)` signature upon the `end` event, in which data is an object parsed from the JSON returned by DynamoDB.
 
 To match [AWS expectations](http://docs.amazonwebservices.com/amazondynamodb/latest/developerguide/ErrorHandling.html#APIRetries), the following requests are automatically retried with exponential backoff (50ms, 100ms, 200ms, 400ms, etc) upon failure:
 

@@ -3,6 +3,34 @@ var dynamo = exports
   , http   = require("http")
   , https  = require("https")
   , crypto = require("crypto")
+  , events = require("events")
+
+function EventEmitter() {
+  events.EventEmitter.apply(this, arguments)
+}
+
+EventEmitter.prototype = new events.EventEmitter
+
+EventEmitter.prototype.callback = function(cb) {
+  if (typeof cb != "function") return this
+
+  var args = [null]
+
+  if (cb.length != 1) this.on("data", function(data) {
+    args.push(data)
+  })
+
+  this.once("error", function(err) {
+    args[0] = err
+    this.emit("end")
+  })
+
+  this.once("end", function() {
+    cb.apply(null, args)
+  })
+
+  return this
+}
 
 function Database(host, credentials) {
   this.host    = host
@@ -10,13 +38,15 @@ function Database(host, credentials) {
 }
 
 Database.prototype.request = function(target, data, cb) {
+  var emitter = new EventEmitter
+
   !function retry(db, i) {
     var req = new Request(db.host, target, data || {})
 
     db.account.sign(req, function(err) {
-      if (err) cb(err)
+      if (err) return emitter.emit("error", err)
 
-      else req.send(function(err, data) {
+      req.send(function(err, data) {
         if (
           err
           && i < Request.prototype.maxRetries
@@ -26,15 +56,19 @@ Database.prototype.request = function(target, data, cb) {
             err.name.slice(-38) == "ProvisionedThroughputExceededException"
           )
         ) {
-          setTimeout(retry, 50 << i, db, i + 1)
+          return setTimeout(retry, 50 << i, db, i + 1)
         }
 
-        else cb(err, data)
+        err
+          ? emitter.emit("error", err)
+          : emitter.emit("data", data)
+
+        emitter.emit("end")
       })
     })
   }(this, 0)
 
-  return this
+  return emitter.callback(cb)
 }
 
 function Request(host, target, data) {
@@ -65,7 +99,7 @@ Request.prototype.toString = function() {
 Request.prototype.send = function(cb) {
   var request = http.request(this, function(res) {
     var json = ""
-    
+
     res.setEncoding("utf8")
 
     res.on("data", function(chunk){ json += chunk })
@@ -259,6 +293,7 @@ function Credentials(attrs) {
   }
 }
 
+dynamo.EventEmitter    = EventEmitter
 dynamo.Database        = Database
 dynamo.Request         = Request
 dynamo.RequestHeaders  = RequestHeaders
