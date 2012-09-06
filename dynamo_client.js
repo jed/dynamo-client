@@ -21,7 +21,7 @@ Database.prototype.request = function(target, data, cb) {
             err.statusCode == 500 ||
             err.statusCode == 503 ||
             err.name.slice(-38) == "ProvisionedThroughputExceededException"
-          ) {
+          )) {
             setTimeout(retry, 50 << i, database, i + 1)
           }
 
@@ -256,7 +256,6 @@ function Credentials(attrs) {
   }
 }
 
-dynamo.EventEmitter    = EventEmitter
 dynamo.Database        = Database
 dynamo.Request         = Request
 dynamo.RequestHeaders  = RequestHeaders
