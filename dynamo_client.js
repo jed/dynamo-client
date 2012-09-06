@@ -1,36 +1,7 @@
 var dynamo = exports
-
-  , http   = require("http")
-  , https  = require("https")
-  , crypto = require("crypto")
-  , events = require("events")
-
-function EventEmitter() {
-  events.EventEmitter.apply(this, arguments)
-}
-
-EventEmitter.prototype = new events.EventEmitter
-
-EventEmitter.prototype.callback = function(cb) {
-  if (typeof cb != "function") return this
-
-  var args = [null]
-
-  if (cb.length != 1) this.on("data", function(data) {
-    args.push(data)
-  })
-
-  this.once("error", function(err) {
-    args[0] = err
-    this.emit("end")
-  })
-
-  this.once("end", function() {
-    cb.apply(null, args)
-  })
-
-  return this
-}
+var http   = require("http")
+var https  = require("https")
+var crypto = require("crypto")
 
 function Database(host, credentials) {
   this.host    = host
@@ -38,39 +9,29 @@ function Database(host, credentials) {
 }
 
 Database.prototype.request = function(target, data, cb) {
-  var database = this
-  var emitter = new EventEmitter
-  var i = 0
-
-  emitter.once("newListener", function retry() {
+  !function retry(database, i) {
     var req = new Request(database.host, target, data || {})
 
     database.account.sign(req, function(err) {
-      if (err) return emitter.emit("error", err)
+      if (err) return cb(err)
 
       req.send(function(err, data) {
-        if (
-          err
-          && i < Request.prototype.maxRetries
-          && (
+        if (err) {
+          if (i < Request.prototype.maxRetries && (
             err.statusCode == 500 ||
             err.statusCode == 503 ||
             err.name.slice(-38) == "ProvisionedThroughputExceededException"
-          )
-        ) {
-          return setTimeout(retry, 50 << i++)
+          ) {
+            setTimeout(retry, 50 << i, database, i + 1)
+          }
+
+          else cb(err)
         }
 
-        err
-          ? emitter.emit("error", err)
-          : emitter.emit("data", data)
-
-        emitter.emit("end")
+        else cb(null, data)
       })
     })
-  })
-
-  return emitter.callback(cb)
+  }(this, 0)
 }
 
 function Request(host, target, data) {
