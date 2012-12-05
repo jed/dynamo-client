@@ -1,5 +1,9 @@
+# This library has been deprecated.
+
+Please use [Amazon's SDK for node.js](http://aws.amazon.com/sdkfornodejs/) instead.
+
 dynamo-client
-=============
+-------------
 
 [![Build Status](https://secure.travis-ci.org/jed/dynamo-client.png?branch=master)](http://travis-ci.org/jed/dynamo-client)
 
