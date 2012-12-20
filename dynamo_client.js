@@ -3,9 +3,9 @@ var http   = require("http")
 var https  = require("https")
 var crypto = require("crypto")
 
-function Database(host, credentials) {
+function Database(host, credentials, useSession) {
   this.host    = host
-  this.account = new Account(credentials)
+  this.account = new Account(credentials, useSession)
 }
 
 Database.prototype.request = function(target, data, cb) {
@@ -37,16 +37,21 @@ Database.prototype.request = function(target, data, cb) {
 function Request(host, target, data) {
   var headers = this.headers = new RequestHeaders
 
-  this.json = JSON.stringify(data)
+  this.body = JSON.stringify(data)
+
+  // TODO: Would be nicer to pass in region and construct host,
+  // rather than the other way around
+  this.region = host.split(".", 2)[1]
 
   headers["X-Amz-Target"] = Request.prototype.target + target
   headers["Host"] = this.host = host
-  headers["Content-Length"] = Buffer.byteLength(this.json)
+  headers["Content-Length"] = Buffer.byteLength(this.body)
 }
 
 Request.prototype.method     = "POST"
 Request.prototype.pathname   = "/"
 Request.prototype.target     = "DynamoDB_20111205."
+Request.prototype.service    = "dynamodb"
 Request.prototype.data       = {}
 Request.prototype.maxRetries = 10
 
@@ -56,7 +61,7 @@ Request.prototype.toString = function() {
     "\n" +
     "\n" + this.headers +
     "\n" +
-    "\n" + this.json
+    "\n" + this.body
 }
 
 Request.prototype.send = function(cb) {
@@ -82,12 +87,11 @@ Request.prototype.send = function(cb) {
 
   request.on("error", cb)
 
-  request.write(this.json)
+  request.write(this.body)
   request.end()
 }
 
 function RequestHeaders() {
-  this["X-Amz-Date"]   = this["Date"] = (new Date).toUTCString()
   this["Content-Type"] = RequestHeaders.prototype["Content-Type"]
 }
 
@@ -100,11 +104,24 @@ RequestHeaders.prototype.toString = function() {
        "\nx-amz-target:"         + this["X-Amz-Target"]
 }
 
-function Account(credentials) {
-  this.session = new Session(credentials)
+function Account(credentials, useSession) {
+  if (typeof credentials === 'boolean') {
+    useSession = credentials
+    credentials = null
+  }
+  if (useSession)
+    this.session = new Session(credentials)
+  else
+    this.sigV4 = new SignatureV4(credentials)
 }
 
 Account.prototype.sign = function(request, cb) {
+
+  if (this.sigV4) {
+    var acct = this
+    return process.nextTick(function(){ cb(null, acct.sigV4.sign(request)) })
+  }
+
   this.session.fetch(function(err, session) {
     if (err) return cb(err)
 
@@ -112,6 +129,7 @@ Account.prototype.sign = function(request, cb) {
       , payload
 
     request.headers["X-Amz-Security-Token"] = session.token
+    request.headers["X-Amz-Date"] = request.headers["Date"] = (new Date).toUTCString()
 
     payload = new Buffer(request.toString(), "utf8")
     hash = hash.update(payload).digest()
@@ -210,7 +228,7 @@ function SessionQuery() {
 SessionQuery.prototype.Action           = "GetSessionToken"
 SessionQuery.prototype.SignatureMethod  = "HmacSHA256"
 SessionQuery.prototype.SignatureVersion = "2"
-SessionQuery.prototype.Version          ="2011-06-15"
+SessionQuery.prototype.Version          = "2011-06-15"
 
 SessionQuery.prototype.toString = function() {
   return (
@@ -236,11 +254,11 @@ function SessionResponse(xml) {
 
 function Credentials(attrs) {
   var env = process.env
-    , secretAccessKey = attrs.secretAccessKey || env.AWS_SECRET_ACCESS_KEY
 
+  this.secretAccessKey = attrs.secretAccessKey || env.AWS_SECRET_ACCESS_KEY
   this.accessKeyId = attrs.accessKeyId || env.AWS_ACCESS_KEY_ID
 
-  if (!secretAccessKey) {
+  if (!this.secretAccessKey) {
     throw new Error("No secret access key available.")
   }
 
@@ -250,22 +268,116 @@ function Credentials(attrs) {
 
   this.sign = function(data) {
     return crypto
-      .createHmac("sha256", secretAccessKey)
+      .createHmac("sha256", this.secretAccessKey)
       .update(data)
       .digest("base64")
   }
 }
 
-dynamo.Database        = Database
-dynamo.Request         = Request
-dynamo.RequestHeaders  = RequestHeaders
-dynamo.Account         = Account
-dynamo.Session         = Session
-dynamo.SessionRequest  = SessionRequest
-dynamo.SessionQuery    = SessionQuery
-dynamo.SessionResponse = SessionResponse
-dynamo.Credentials     = Credentials
+function SignatureV4(attrs) {
+  this.credentials = new Credentials(attrs || {})
+}
 
-dynamo.createClient = function(host, credentials) {
-  return new Database(host, credentials)
+SignatureV4.prototype.sign = function(request, date) {
+  var datetime = (date || new Date).toISOString().replace(/[:\-]|\.\d{3}/g, "")
+    , authRequest = new SignatureV4Request(this.credentials, request, datetime)
+
+  request.headers["Date"] = request.headers["X-Amz-Date"] = datetime
+  request.headers["Authorization"] = authRequest.createHeader()
+
+  return request
+}
+
+// credentials expects: { accessKeyId, secretAccessKey }
+// request expects: { method, pathname, headers, body, region, service }
+// datetime expects: "yyyymmddTHHMMSSZ"
+function SignatureV4Request(credentials, request, datetime) {
+  this.credentials = credentials
+  this.request = request
+  this.datetime = datetime
+}
+
+SignatureV4Request.prototype.createHeader = function() {
+  return [
+    "AWS4-HMAC-SHA256 Credential=" + this.credentials.accessKeyId + "/" + this.credentialString(),
+    "SignedHeaders=" + this.signedHeaders(),
+    "Signature=" + this.signature()
+  ].join(", ")
+}
+
+SignatureV4Request.prototype.signature = function() {
+  var kDate = this.sha256Digest("AWS4" + this.credentials.secretAccessKey, this.datetime.substr(0, 8))
+  var kRegion = this.sha256Digest(kDate, this.request.region)
+  var kService = this.sha256Digest(kRegion, this.request.service)
+  var kCredentials = this.sha256Digest(kService, "aws4_request")
+  return this.sha256Digest(kCredentials, this.stringToSign(), "hex")
+}
+
+SignatureV4Request.prototype.stringToSign = function() {
+  return [
+    "AWS4-HMAC-SHA256",
+    this.datetime,
+    this.credentialString(),
+    crypto.createHash("sha256").update(this.canonicalString()).digest("hex")
+  ].join("\n")
+}
+
+SignatureV4Request.prototype.canonicalString = function() {
+  var pathSplit = this.request.pathname.split("?", 2)
+  return [
+    this.request.method,
+    pathSplit[0],
+    pathSplit[1] || "",
+    this.canonicalHeaders() + "\n",
+    this.signedHeaders(),
+    crypto.createHash("sha256").update(this.request.body || "").digest("hex")
+  ].join("\n")
+}
+
+SignatureV4Request.prototype.canonicalHeaders = function() {
+  var sig = this
+  return Object.keys(this.request.headers)
+    .sort(function(a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : 1 })
+    .map(function(key) { return key.toLowerCase() + ":" + sig.canonicalHeaderValue(key) })
+    .join("\n")
+}
+
+SignatureV4Request.prototype.canonicalHeaderValue = function(key) {
+  return this.request.headers[key].toString().replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "")
+}
+
+SignatureV4Request.prototype.signedHeaders = function() {
+  return Object.keys(this.request.headers)
+    .map(function(key) { return key.toLowerCase() })
+    .sort()
+    .join(";")
+}
+
+SignatureV4Request.prototype.credentialString = function() {
+  return [
+    this.datetime.substr(0, 8),
+    this.request.region,
+    this.request.service,
+    "aws4_request"
+  ].join("/")
+}
+
+SignatureV4Request.prototype.sha256Digest = function(key, data, encoding) {
+  return crypto.createHmac("sha256", key).update(data).digest(encoding)
+}
+
+dynamo.Database           = Database
+dynamo.Request            = Request
+dynamo.RequestHeaders     = RequestHeaders
+dynamo.Account            = Account
+dynamo.Session            = Session
+dynamo.SessionRequest     = SessionRequest
+dynamo.SessionQuery       = SessionQuery
+dynamo.SessionResponse    = SessionResponse
+dynamo.Credentials        = Credentials
+dynamo.SignatureV4        = SignatureV4
+dynamo.SignatureV4Request = SignatureV4Request
+
+dynamo.createClient = function(host, credentials, useSession) {
+  return new Database(host, credentials, useSession)
 }
