@@ -39,7 +39,7 @@ function Request(host, target, data) {
 
   this.json = JSON.stringify(data)
 
-  headers["x-amz-target"] = Request.prototype.target + target
+  headers["X-Amz-Target"] = Request.prototype.target + target
   headers["Host"] = this.host = host
   headers["Content-Length"] = Buffer.byteLength(this.json)
 }
@@ -87,7 +87,7 @@ Request.prototype.send = function(cb) {
 }
 
 function RequestHeaders() {
-  this["x-amz-date"]   = this["Date"] = (new Date).toUTCString()
+  this["X-Amz-Date"]   = this["Date"] = (new Date).toUTCString()
   this["Content-Type"] = RequestHeaders.prototype["Content-Type"]
 }
 
@@ -95,9 +95,9 @@ RequestHeaders.prototype["Content-Type"] = "application/x-amz-json-1.0"
 
 RequestHeaders.prototype.toString = function() {
   return "host:"                 + this["Host"] +
-       "\nx-amz-date:"           + this["x-amz-date"] +
-       "\nx-amz-security-token:" + this["x-amz-security-token"] +
-       "\nx-amz-target:"         + this["x-amz-target"]
+       "\nx-amz-date:"           + this["X-Amz-Date"] +
+       "\nx-amz-security-token:" + this["X-Amz-Security-Token"] +
+       "\nx-amz-target:"         + this["X-Amz-Target"]
 }
 
 function Account(credentials) {
@@ -111,12 +111,12 @@ Account.prototype.sign = function(request, cb) {
     var hash = crypto.createHash("sha256")
       , payload
 
-    request.headers["x-amz-security-token"] = session.token
+    request.headers["X-Amz-Security-Token"] = session.token
 
     payload = new Buffer(request.toString(), "utf8")
     hash = hash.update(payload).digest()
 
-    request.headers["x-amzn-authorization"] = "AWS3 " + [
+    request.headers["X-Amzn-Authorization"] = "AWS3 " + [
       "AWSAccessKeyId=" + session.tokenCredentials.accessKeyId,
       "Algorithm=HmacSHA256",
       "SignedHeaders=host;x-amz-date;x-amz-security-token;x-amz-target",
