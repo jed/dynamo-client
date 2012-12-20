@@ -4,7 +4,7 @@ var https  = require("https")
 var crypto = require("crypto")
 
 function Database(host, strategy) {
-  if (!strategy || typeof strategy.send !== 'function') {
+  if (!strategy || typeof strategy.sign !== 'function') {
     strategy = new Signature(strategy)
   }
   this.host     = host
