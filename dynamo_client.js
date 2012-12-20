@@ -3,14 +3,28 @@ var http   = require("http")
 var https  = require("https")
 var crypto = require("crypto")
 
-function Database(host, credentials) {
-  this.host        = host
+function Database(region, credentials) {
+  if (typeof region === "object") {
+    this.host = region.host
+    this.port = region.port
+    this.region = region.region
+    credentials = region.credentials || credentials
+  } else {
+    // Backwards compatible check for when 1st param was host
+    if (/^dynamodb\./.test(region) || region === "localhost")
+      this.host = region
+    else
+      this.region = region
+  }
+  if (!this.region) this.region = (this.host || "").split(".", 2)[1] || "us-east-1"
+  if (!this.host) this.host = "dynamodb." + this.region + ".amazonaws.com"
+
   this.credentials = new Credentials(credentials || {})
 }
 
 Database.prototype.request = function(target, data, cb) {
   !function retry(database, i) {
-    var req = new Request(database.host, target, data || {})
+    var req = new Request(database, target, data || {})
 
     req.sign(database.credentials)
 
@@ -32,17 +46,17 @@ Database.prototype.request = function(target, data, cb) {
   }(this, 0)
 }
 
-function Request(host, target, data) {
+function Request(opts, target, data) {
   var headers = this.headers = {}
+
+  this.host = opts.host
+  this.port = opts.port
+  this.region = opts.region
 
   this.body = JSON.stringify(data)
 
-  // TODO: Would be nicer to pass in region and construct host,
-  // rather than the other way around
-  this.region = host.split(".", 2)[1]
-
   headers["X-Amz-Target"] = Request.prototype.target + target
-  headers["Host"] = this.host = host
+  headers["Host"] = this.host
   headers["Content-Length"] = Buffer.byteLength(this.body)
   headers["Content-Type"] = Request.prototype.contentType
 }
@@ -194,6 +208,6 @@ dynamo.Request       = Request
 dynamo.Credentials   = Credentials
 dynamo.RequestSigner = RequestSigner
 
-dynamo.createClient = function(host, credentials) {
-  return new Database(host, credentials)
+dynamo.createClient = function(region, credentials) {
+  return new Database(region, credentials)
 }

@@ -11,8 +11,8 @@ Example
 ```javascript
 // assuming AWS credentials are available from process.ENV
 var dynamo = require("dynamo-client")
-  , host   = "dynamodb.us-east-1.amazonaws.com"
-  , db     = dynamo.createClient(host)
+  , region = "us-east-1"
+  , db     = dynamo.createClient(region)
 
 db.request("ListTables", null, function(err, data) {
   console.log(data.TableNames.length + " tables found.")
@@ -22,23 +22,34 @@ db.request("ListTables", null, function(err, data) {
 API
 ---
 
-### db = dynamo.createClient(host, [credentials])
+### db = dynamo.createClient(region, [credentials])
 
-This creates a database instance for the given DynamoDB host, which can currently be one of the following:
+This creates a database instance for the given DynamoDB region, which can be one of the following:
 
-- `dynamodb.us-east-1.amazonaws.com` (Virginia)
-- `dynamodb.us-west-1.amazonaws.com` (Northern California)
-- `dynamodb.us-west-2.amazonaws.com` (Oregon)
-- `dynamodb.ap-northeast-1.amazonaws.com` (Tokyo)
-- `dynamodb.ap-southeast-1.amazonaws.com` (Singapore)
-- `dynamodb.eu-west-1.amazonaws.com` (Ireland)
+- `us-east-1` (Northern Virginia)
+- `us-west-1` (Northern California)
+- `us-west-2` (Oregon)
+- `eu-west-1` (Ireland)
+- `ap-northeast-1` (Tokyo)
+- `ap-southeast-1` (Singapore)
+- `ap-southeast-2` (Sydney)
+- `sa-east-1` (Sao Paulo)
+
+The official region list can be found in the [AWS documentation](http://docs.amazonwebservices.com/general/latest/gr/rande.html#ddb_region)
+
+For backwards compatibility with versions &lt;= 0.2.4, you can also pass the full host in here
+instead (ie, `dynamo.createClient("dynamodb.eu-west-1.amazonaws.com")`).
+
+You can also pass an object in here with `host`, `port`, `region` and/or
+`credentials` parameters (ie, `dynamo.createClient({host: "localhost", port: 4567})` - this
+is especially useful if you want to connect to a mock DynamoDB instance (such as [FakeDynamo](https://github.com/ananthakumaran/fake_dynamo) or [ddbmock](https://bitbucket.org/Ludia/dynamodb-mock)).
 
 Your AWS credentials (which can be found in your [AWS console](https://portal.aws.amazon.com/gp/aws/securityCredentials)) can be specified in one of two ways:
 
 - As the second argument, like this:
 
 ```javascript
-dynamo.createClient("dynamodb.us-east-1.amazonaws.com", {
+dynamo.createClient("us-east-1", {
   secretAccessKey: "<your-secret-access-key>",
   accessKeyId: "<your-access-key-id>"
 })
