@@ -1,13 +1,9 @@
-# This library has been deprecated.
-
-Please use [Amazon's SDK for node.js](http://aws.amazon.com/sdkfornodejs/) instead.
-
 dynamo-client
 -------------
 
 [![Build Status](https://secure.travis-ci.org/jed/dynamo-client.png?branch=master)](http://travis-ci.org/jed/dynamo-client)
 
-This is a low-level client for accessing DynamoDB. It was factored out of [dynamo](http://github.com/jed/dynamo) to separate concerns for better testability.
+This is a low-level client for accessing DynamoDB from node.js. It offers a simpler and more node-friendly API than [Amazon's SDK](http://aws.amazon.com/sdkfornodejs/).
 
 Example
 -------
