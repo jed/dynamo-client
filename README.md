@@ -35,14 +35,23 @@ This creates a database instance for the given DynamoDB region, which can be one
 - `ap-southeast-2` (Sydney)
 - `sa-east-1` (Sao Paulo)
 
-The official region list can be found in the [AWS documentation](http://docs.amazonwebservices.com/general/latest/gr/rande.html#ddb_region)
-
-For backwards compatibility with versions &lt;= 0.2.4, you can also pass the full host in here
-instead (ie, `dynamo.createClient("dynamodb.eu-west-1.amazonaws.com")`).
+The official region list can be found in the [AWS documentation](http://docs.amazonwebservices.com/general/latest/gr/rande.html#ddb_region).
 
 You can also pass an object in here with `host`, `port`, `region` and/or
-`credentials` parameters (ie, `dynamo.createClient({host: "localhost", port: 4567})` - this
-is especially useful if you want to connect to a mock DynamoDB instance (such as [FakeDynamo](https://github.com/ananthakumaran/fake_dynamo) or [ddbmock](https://bitbucket.org/Ludia/dynamodb-mock)).
+`credentials` parameters:
+
+```javascript
+var db = dynamo.createClient({host: "localhost", port: 4567})
+```
+
+This is especially useful if you want to connect to a mock DynamoDB instance (such as [FakeDynamo](https://github.com/ananthakumaran/fake_dynamo) or [ddbmock](https://bitbucket.org/Ludia/dynamodb-mock)).
+
+For backwards compatibility with versions &lt;= 0.2.4, you can also pass the full host in here
+too (will match any of the standard endpoints or `localhost`):
+
+```javascript
+var db = dynamo.createClient("dynamodb.eu-west-1.amazonaws.com")
+```
 
 Your AWS credentials (which can be found in your [AWS console](https://portal.aws.amazon.com/gp/aws/securityCredentials)) can be specified in one of two ways:
 
