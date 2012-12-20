@@ -47,7 +47,8 @@ var db = dynamo.createClient({host: "localhost", port: 4567})
 This is especially useful if you want to connect to a mock DynamoDB instance (such as [FakeDynamo](https://github.com/ananthakumaran/fake_dynamo) or [ddbmock](https://bitbucket.org/Ludia/dynamodb-mock)).
 
 For backwards compatibility with versions &lt;= 0.2.4, you can also pass the full host in here
-too (will match any of the standard endpoints or `localhost`):
+too (should detect most hostnames unless they're incredibly similar to
+an AWS region name):
 
 ```javascript
 var db = dynamo.createClient("dynamodb.eu-west-1.amazonaws.com")

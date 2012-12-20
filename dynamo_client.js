@@ -10,11 +10,11 @@ function Database(region, credentials) {
     this.region = region.region
     credentials = region.credentials || credentials
   } else {
-    // Backwards compatible check for when 1st param was host
-    if (/^dynamodb\./.test(region) || region === "localhost")
-      this.host = region
-    else
+    if (/^[a-z]{2}\-[a-z]+\-\d$/.test(region))
       this.region = region
+    else
+      // Backwards compatibility for when 1st param was host
+      this.host = region
   }
   if (!this.region) this.region = (this.host || "").split(".", 2)[1] || "us-east-1"
   if (!this.host) this.host = "dynamodb." + this.region + ".amazonaws.com"
