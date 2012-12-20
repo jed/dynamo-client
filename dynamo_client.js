@@ -59,6 +59,10 @@ Request.prototype.sign = function(credentials, date) {
     , signer = new RequestSigner(credentials, this, datetime)
 
   this.headers["Date"] = this.headers["X-Amz-Date"] = datetime
+
+  if (credentials.sessionToken)
+    this.headers["X-Amz-Security-Token"] = credentials.sessionToken
+
   this.headers["Authorization"] = signer.createAuthHeader()
 }
 
@@ -102,6 +106,9 @@ function Credentials(attrs) {
   if (!this.accessKeyId) {
     throw new Error("No access key id available.")
   }
+
+  // Optional session token, if the user wants to supply one
+  this.sessionToken = attrs.sessionToken
 }
 
 // credentials expects: { accessKeyId, secretAccessKey }
