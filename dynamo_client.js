@@ -3,16 +3,19 @@ var http   = require("http")
 var https  = require("https")
 var crypto = require("crypto")
 
-function Database(host, credentials, useSession) {
-  this.host    = host
-  this.account = new Account(credentials, useSession)
+function Database(host, strategy) {
+  if (!strategy || typeof strategy.send !== 'function') {
+    strategy = new Signature(strategy)
+  }
+  this.host     = host
+  this.strategy = strategy
 }
 
 Database.prototype.request = function(target, data, cb) {
   !function retry(database, i) {
     var req = new Request(database.host, target, data || {})
 
-    database.account.sign(req, function(err) {
+    database.strategy.sign(req, function(err) {
       if (err) return cb(err)
 
       req.send(function(err, data) {
@@ -104,32 +107,30 @@ RequestHeaders.prototype.toString = function() {
        "\nx-amz-target:"         + this["X-Amz-Target"]
 }
 
-function Account(credentials, useSession) {
-  if (typeof credentials === 'boolean') {
-    useSession = credentials
-    credentials = null
-  }
-  if (useSession)
-    this.session = new Session(credentials)
-  else
-    this.sigV4 = new SignatureV4(credentials)
+function Session(attrs) {
+  this.sessionCredentials = new Credentials(attrs || {})
+  this.tokenCredentials = null
+  this.listeners = []
 }
 
-Account.prototype.sign = function(request, cb) {
+Session.prototype.duration         = 60 * 60 * 1000
+Session.prototype.refreshPadding   = 60 * 1000 //refresh 1 minute ahead of time
+Session.prototype.consumedCapacity = 0
 
-  if (this.sigV4) {
-    var acct = this
-    return process.nextTick(function(){ cb(null, acct.sigV4.sign(request)) })
+Session.prototype.sign = function(request, date, cb) {
+  if (!cb) {
+    cb = date
+    date = new Date
   }
 
-  this.session.fetch(function(err, session) {
+  this.fetch(function(err, session) {
     if (err) return cb(err)
 
     var hash = crypto.createHash("sha256")
       , payload
 
     request.headers["X-Amz-Security-Token"] = session.token
-    request.headers["X-Amz-Date"] = request.headers["Date"] = (new Date).toUTCString()
+    request.headers["X-Amz-Date"] = request.headers["Date"] = date.toUTCString()
 
     payload = new Buffer(request.toString(), "utf8")
     hash = hash.update(payload).digest()
@@ -144,16 +145,6 @@ Account.prototype.sign = function(request, cb) {
     cb(null, request)
   })
 }
-
-function Session(attrs) {
-  this.sessionCredentials = new Credentials(attrs || {})
-  this.tokenCredentials = null
-  this.listeners = []
-}
-
-Session.prototype.duration         = 60 * 60 * 1000
-Session.prototype.refreshPadding   = 60 * 1000 //refresh 1 minute ahead of time
-Session.prototype.consumedCapacity = 0
 
 Session.prototype.fetch = function(cb) {
   if ((this.expiration - this.refreshPadding) > new Date) return cb(null, this)
@@ -274,30 +265,35 @@ function Credentials(attrs) {
   }
 }
 
-function SignatureV4(attrs) {
+function Signature(attrs) {
   this.credentials = new Credentials(attrs || {})
 }
 
-SignatureV4.prototype.sign = function(request, date) {
-  var datetime = (date || new Date).toISOString().replace(/[:\-]|\.\d{3}/g, "")
-    , authRequest = new SignatureV4Request(this.credentials, request, datetime)
+Signature.prototype.sign = function(request, date, cb) {
+  if (!cb) {
+    cb = date
+    date = new Date
+  }
+
+  var datetime = date.toISOString().replace(/[:\-]|\.\d{3}/g, "")
+    , authRequest = new SignatureRequest(this.credentials, request, datetime)
 
   request.headers["Date"] = request.headers["X-Amz-Date"] = datetime
   request.headers["Authorization"] = authRequest.createHeader()
 
-  return request
+  process.nextTick(cb.bind(null, null, request))
 }
 
 // credentials expects: { accessKeyId, secretAccessKey }
 // request expects: { method, pathname, headers, body, region, service }
 // datetime expects: "yyyymmddTHHMMSSZ"
-function SignatureV4Request(credentials, request, datetime) {
+function SignatureRequest(credentials, request, datetime) {
   this.credentials = credentials
   this.request = request
   this.datetime = datetime
 }
 
-SignatureV4Request.prototype.createHeader = function() {
+SignatureRequest.prototype.createHeader = function() {
   return [
     "AWS4-HMAC-SHA256 Credential=" + this.credentials.accessKeyId + "/" + this.credentialString(),
     "SignedHeaders=" + this.signedHeaders(),
@@ -305,7 +301,7 @@ SignatureV4Request.prototype.createHeader = function() {
   ].join(", ")
 }
 
-SignatureV4Request.prototype.signature = function() {
+SignatureRequest.prototype.signature = function() {
   var kDate = this.sha256Digest("AWS4" + this.credentials.secretAccessKey, this.datetime.substr(0, 8))
   var kRegion = this.sha256Digest(kDate, this.request.region)
   var kService = this.sha256Digest(kRegion, this.request.service)
@@ -313,7 +309,7 @@ SignatureV4Request.prototype.signature = function() {
   return this.sha256Digest(kCredentials, this.stringToSign(), "hex")
 }
 
-SignatureV4Request.prototype.stringToSign = function() {
+SignatureRequest.prototype.stringToSign = function() {
   return [
     "AWS4-HMAC-SHA256",
     this.datetime,
@@ -322,7 +318,7 @@ SignatureV4Request.prototype.stringToSign = function() {
   ].join("\n")
 }
 
-SignatureV4Request.prototype.canonicalString = function() {
+SignatureRequest.prototype.canonicalString = function() {
   var pathSplit = this.request.pathname.split("?", 2)
   return [
     this.request.method,
@@ -334,7 +330,7 @@ SignatureV4Request.prototype.canonicalString = function() {
   ].join("\n")
 }
 
-SignatureV4Request.prototype.canonicalHeaders = function() {
+SignatureRequest.prototype.canonicalHeaders = function() {
   var sig = this
   return Object.keys(this.request.headers)
     .sort(function(a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : 1 })
@@ -342,18 +338,18 @@ SignatureV4Request.prototype.canonicalHeaders = function() {
     .join("\n")
 }
 
-SignatureV4Request.prototype.canonicalHeaderValue = function(key) {
+SignatureRequest.prototype.canonicalHeaderValue = function(key) {
   return this.request.headers[key].toString().replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "")
 }
 
-SignatureV4Request.prototype.signedHeaders = function() {
+SignatureRequest.prototype.signedHeaders = function() {
   return Object.keys(this.request.headers)
     .map(function(key) { return key.toLowerCase() })
     .sort()
     .join(";")
 }
 
-SignatureV4Request.prototype.credentialString = function() {
+SignatureRequest.prototype.credentialString = function() {
   return [
     this.datetime.substr(0, 8),
     this.request.region,
@@ -362,22 +358,21 @@ SignatureV4Request.prototype.credentialString = function() {
   ].join("/")
 }
 
-SignatureV4Request.prototype.sha256Digest = function(key, data, encoding) {
+SignatureRequest.prototype.sha256Digest = function(key, data, encoding) {
   return crypto.createHmac("sha256", key).update(data).digest(encoding)
 }
 
-dynamo.Database           = Database
-dynamo.Request            = Request
-dynamo.RequestHeaders     = RequestHeaders
-dynamo.Account            = Account
-dynamo.Session            = Session
-dynamo.SessionRequest     = SessionRequest
-dynamo.SessionQuery       = SessionQuery
-dynamo.SessionResponse    = SessionResponse
-dynamo.Credentials        = Credentials
-dynamo.SignatureV4        = SignatureV4
-dynamo.SignatureV4Request = SignatureV4Request
+dynamo.Database         = Database
+dynamo.Request          = Request
+dynamo.RequestHeaders   = RequestHeaders
+dynamo.Session          = Session
+dynamo.SessionRequest   = SessionRequest
+dynamo.SessionQuery     = SessionQuery
+dynamo.SessionResponse  = SessionResponse
+dynamo.Credentials      = Credentials
+dynamo.Signature        = Signature
+dynamo.SignatureRequest = SignatureRequest
 
-dynamo.createClient = function(host, credentials, useSession) {
-  return new Database(host, credentials, useSession)
+dynamo.createClient = function(host, strategy) {
+  return new Database(host, strategy)
 }

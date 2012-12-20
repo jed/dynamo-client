@@ -22,7 +22,7 @@ describe("dynamo", function() {
     })
   })
   describe("'PutItem' x 50 using Session", function() {
-    var sessionDb = dynamo.createClient(host, true)
+    var sessionDb = dynamo.createClient(host, new dynamo.Session())
     it("should not throw ProvisionedThroughputExceededException", function(done) {
       for (var i = 0, n = 50, e = null; i < n; i++) {
         sessionDb.request("PutItem", {
