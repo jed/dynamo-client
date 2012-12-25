@@ -1,7 +1,7 @@
 var should = require("should")
   , dynamo = require("../")
-  , host   = "dynamodb.us-east-1.amazonaws.com"
-  , db     = dynamo.createClient(host)
+  , region = "us-east-1"
+  , db     = dynamo.createClient(region)
   , name   = "jed_dynamo-client_test"
 
 describe("dynamo", function() {
