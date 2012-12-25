@@ -64,7 +64,7 @@ function Request(opts, target, data) {
 }
 
 Request.prototype.method      = "POST"
-Request.prototype.pathname    = "/"
+Request.prototype.path        = "/"
 Request.prototype.target      = "DynamoDB_20111205."
 Request.prototype.service     = "dynamodb"
 Request.prototype.maxRetries  = 10
@@ -102,7 +102,7 @@ Request.prototype.send = function(cb) {
 }
 
 // credentials expects: { accessKeyId, secretAccessKey }
-// request expects: { method, pathname, headers, body, region, service }
+// request expects: { method, path, headers, body, region, service }
 function RequestSigner(credentials, request) {
   this.credentials = credentials
   this.request = request
@@ -150,7 +150,7 @@ RequestSigner.prototype.stringToSign = function() {
 }
 
 RequestSigner.prototype.canonicalString = function() {
-  var pathSplit = this.request.pathname.split("?", 2)
+  var pathSplit = this.request.path.split("?", 2)
   return [
     this.request.method,
     pathSplit[0],
