@@ -55,10 +55,12 @@ function Request(opts, target, data) {
 
   this.body = JSON.stringify(data)
 
-  headers["X-Amz-Target"] = Request.prototype.target + target
   headers["Host"] = this.host
+  headers["Date"] = new Date().toUTCString()
   headers["Content-Length"] = Buffer.byteLength(this.body)
   headers["Content-Type"] = Request.prototype.contentType
+
+  headers["X-Amz-Target"] = Request.prototype.target + target
 }
 
 Request.prototype.method      = "POST"
@@ -68,16 +70,8 @@ Request.prototype.service     = "dynamodb"
 Request.prototype.maxRetries  = 10
 Request.prototype.contentType = "application/x-amz-json-1.0"
 
-Request.prototype.sign = function(credentials, date) {
-  var datetime = (date || new Date).toISOString().replace(/[:\-]|\.\d{3}/g, "")
-    , signer = new RequestSigner(credentials, this, datetime)
-
-  this.headers["Date"] = this.headers["X-Amz-Date"] = datetime
-
-  if (credentials.sessionToken)
-    this.headers["X-Amz-Security-Token"] = credentials.sessionToken
-
-  this.headers["Authorization"] = signer.createAuthHeader()
+Request.prototype.sign = function(credentials) {
+  new RequestSigner(credentials, this).sign()
 }
 
 Request.prototype.send = function(cb) {
@@ -107,34 +101,27 @@ Request.prototype.send = function(cb) {
   request.end()
 }
 
-function Credentials(attrs) {
-  var env = process.env
-
-  this.secretAccessKey = attrs.secretAccessKey || env.AWS_SECRET_ACCESS_KEY
-  this.accessKeyId = attrs.accessKeyId || env.AWS_ACCESS_KEY_ID
-
-  if (!this.secretAccessKey) {
-    throw new Error("No secret access key available.")
-  }
-
-  if (!this.accessKeyId) {
-    throw new Error("No access key id available.")
-  }
-
-  // Optional session token, if the user wants to supply one
-  this.sessionToken = attrs.sessionToken
-}
-
 // credentials expects: { accessKeyId, secretAccessKey }
 // request expects: { method, pathname, headers, body, region, service }
-// datetime expects: "yyyymmddTHHMMSSZ"
-function RequestSigner(credentials, request, datetime) {
+function RequestSigner(credentials, request) {
   this.credentials = credentials
   this.request = request
-  this.datetime = datetime
+  this.datetime = new Date(request.headers["Date"]).toISOString().replace(/[:\-]|\.\d{3}/g, "")
+  this.date = this.datetime.substr(0, 8)
 }
 
-RequestSigner.prototype.createAuthHeader = function() {
+RequestSigner.prototype.sign = function() {
+  var headers = this.request.headers
+
+  headers["X-Amz-Date"] = this.datetime
+
+  if (this.credentials.sessionToken)
+    headers["X-Amz-Security-Token"] = this.credentials.sessionToken
+
+  headers["Authorization"] = this.authHeader()
+}
+
+RequestSigner.prototype.authHeader = function() {
   return [
     "AWS4-HMAC-SHA256 Credential=" + this.credentials.accessKeyId + "/" + this.credentialString(),
     "SignedHeaders=" + this.signedHeaders(),
@@ -143,11 +130,14 @@ RequestSigner.prototype.createAuthHeader = function() {
 }
 
 RequestSigner.prototype.signature = function() {
-  var kDate = this.sha256Digest("AWS4" + this.credentials.secretAccessKey, this.datetime.substr(0, 8))
-  var kRegion = this.sha256Digest(kDate, this.request.region)
-  var kService = this.sha256Digest(kRegion, this.request.service)
-  var kCredentials = this.sha256Digest(kService, "aws4_request")
-  return this.sha256Digest(kCredentials, this.stringToSign(), "hex")
+  function hmac(key, data, encoding) {
+    return crypto.createHmac("sha256", key).update(data).digest(encoding)
+  }
+  var kDate = hmac("AWS4" + this.credentials.secretAccessKey, this.date)
+  var kRegion = hmac(kDate, this.request.region)
+  var kService = hmac(kRegion, this.request.service)
+  var kCredentials = hmac(kService, "aws4_request")
+  return hmac(kCredentials, this.stringToSign(), "hex")
 }
 
 RequestSigner.prototype.stringToSign = function() {
@@ -172,15 +162,14 @@ RequestSigner.prototype.canonicalString = function() {
 }
 
 RequestSigner.prototype.canonicalHeaders = function() {
-  var sig = this
-  return Object.keys(this.request.headers)
+  var headers = this.request.headers
+  function trimAll(header) {
+    return header.toString().trim().replace(/\s+/g, " ")
+  }
+  return Object.keys(headers)
     .sort(function(a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : 1 })
-    .map(function(key) { return key.toLowerCase() + ":" + sig.canonicalHeaderValue(key) })
+    .map(function(key) { return key.toLowerCase() + ":" + trimAll(headers[key]) })
     .join("\n")
-}
-
-RequestSigner.prototype.canonicalHeaderValue = function(key) {
-  return this.request.headers[key].toString().replace(/\s+/g, " ").trim()
 }
 
 RequestSigner.prototype.signedHeaders = function() {
@@ -192,21 +181,35 @@ RequestSigner.prototype.signedHeaders = function() {
 
 RequestSigner.prototype.credentialString = function() {
   return [
-    this.datetime.substr(0, 8),
+    this.date,
     this.request.region,
     this.request.service,
     "aws4_request"
   ].join("/")
 }
 
-RequestSigner.prototype.sha256Digest = function(key, data, encoding) {
-  return crypto.createHmac("sha256", key).update(data).digest(encoding)
+function Credentials(attrs) {
+  var env = process.env
+
+  this.secretAccessKey = attrs.secretAccessKey || env.AWS_SECRET_ACCESS_KEY
+  this.accessKeyId = attrs.accessKeyId || env.AWS_ACCESS_KEY_ID
+
+  if (!this.secretAccessKey) {
+    throw new Error("No secret access key available.")
+  }
+
+  if (!this.accessKeyId) {
+    throw new Error("No access key id available.")
+  }
+
+  // Optional session token, if the user wants to supply one
+  this.sessionToken = attrs.sessionToken
 }
 
 dynamo.Database      = Database
 dynamo.Request       = Request
-dynamo.Credentials   = Credentials
 dynamo.RequestSigner = RequestSigner
+dynamo.Credentials   = Credentials
 
 dynamo.createClient = function(region, credentials) {
   return new Database(region, credentials)
