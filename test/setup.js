@@ -25,9 +25,7 @@ describe("dynamo", function() {
           WriteCapacityUnits: 5
         }
       }, function(err, data) {
-        var inUse = "com.amazonaws.dynamodb.v20111205#ResourceInUseException"
-
-        if (err && err.name == inUse) err = null
+        if (err && err.name == "ResourceInUseException") err = null
 
         done(err)
       })
