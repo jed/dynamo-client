@@ -101,8 +101,8 @@ The callback is called with the usual `(err, data)` signature, in which data is 
 
 To match [AWS expectations](http://docs.amazonwebservices.com/amazondynamodb/latest/developerguide/ErrorHandling.html#APIRetries), the following requests are automatically retried with exponential backoff (50ms, 100ms, 200ms, 400ms, etc) upon failure:
 
-- 500 errors
-- 503 errors
+- 5xx errors
+- 400 ThrottlingException errors
 - 400 ProvisionedThroughputExceededException errors
 
 Retries are attempted up to 10 times by default, but this amount can be changed by setting `dynamo.Request.prototype.maxRetries` to the desired number.
