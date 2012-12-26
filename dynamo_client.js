@@ -32,9 +32,9 @@ Database.prototype.request = function(target, data, cb) {
     req.send(function(err, data) {
       if (err) {
         if (i < Request.prototype.maxRetries && (
-          err.statusCode == 500 ||
-          err.statusCode == 503 ||
-          err.name == "ProvisionedThroughputExceededException"
+          err.statusCode >= 500 ||
+          err.name == "ProvisionedThroughputExceededException" ||
+          err.name == "ThrottlingException"
         )) {
           setTimeout(retry, 50 << i, database, i + 1)
         }
