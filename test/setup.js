@@ -9,6 +9,21 @@ var should = require("should")
 describe("dynamo", function() {
   it("starting tests at " + JSON.stringify(new Date))
 
+  describe("'DescribeTable'", function() {
+    it("should ensure the table is not being deleted", function describe(done) {
+      var db = dynamo.createClient(region)
+      db.request("DescribeTable", {TableName: name}, function(err, data) {
+        if (err && err.name == "ResourceNotFoundException") done()
+
+        else if (err) done(err)
+
+        else if (data.Table.TableStatus == "DELETING") setTimeout(describe, 5000, done)
+
+        else done()
+      })
+    })
+  })
+
   describe("'CreateTable'", function() {
     it("should create a table", function(done) {
       var db = dynamo.createClient(region)
