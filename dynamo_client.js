@@ -69,10 +69,6 @@ Request.prototype.target      = "DynamoDB_20111205."
 Request.prototype.maxRetries  = 10
 Request.prototype.contentType = "application/x-amz-json-1.0"
 
-Request.prototype.sign = function(credentials) {
-  new RequestSigner(credentials, this).sign()
-}
-
 Request.prototype.send = function(cb) {
   var request = http.request(this, function(res) {
     var json = ""
