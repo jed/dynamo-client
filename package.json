@@ -23,7 +23,7 @@
   },
   "scripts": {
     "pretest": "mocha ./test/setup.js -b -t 100s -R list",
-    "test": "mocha ./test/test.js -b -t 100s -R list",
+    "test": "mocha ./test/fast.js ./test/slow.js -b -t 100s -R list",
     "posttest": "mocha ./test/teardown.js -b -t 100s -R list"
   }
 }
