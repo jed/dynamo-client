@@ -34,7 +34,7 @@ Database.prototype.request = function(target, data, cb) {
         if (i < Request.prototype.maxRetries && (
           err.statusCode == 500 ||
           err.statusCode == 503 ||
-          err.name.slice(-38) == "ProvisionedThroughputExceededException"
+          err.name == "ProvisionedThroughputExceededException"
         )) {
           setTimeout(retry, 50 << i, database, i + 1)
         }
@@ -82,7 +82,7 @@ Request.prototype.send = function(cb) {
       if (res.statusCode == 200) return cb(null, response)
 
       error = new Error
-      error.name = response.__type
+      error.name = (response.__type || '').split('#').pop()
       error.message = response.message
       error.statusCode = res.statusCode
 
