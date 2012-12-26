@@ -106,4 +106,3 @@ To match [AWS expectations](http://docs.amazonwebservices.com/amazondynamodb/lat
 - 400 ProvisionedThroughputExceededException errors
 
 Retries are attempted up to 10 times by default, but this amount can be changed by setting `dynamo.Request.prototype.maxRetries` to the desired number.
-
