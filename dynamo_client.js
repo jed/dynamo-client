@@ -9,6 +9,7 @@ function Database(region, credentials) {
     this.host = region.host
     this.port = region.port
     this.region = region.region
+    this.version = region.version // '20120810' or '20111205'
     credentials = region.credentials || credentials
   } else {
     if (/^[a-z]{2}\-[a-z]+\-\d$/.test(region))
@@ -19,6 +20,7 @@ function Database(region, credentials) {
   }
   if (!this.region) this.region = (this.host || "").split(".", 2)[1] || "us-east-1"
   if (!this.host) this.host = "dynamodb." + this.region + ".amazonaws.com"
+  if (!this.version) this.version = "20120810"
 
   this.credentials = new Credentials(credentials || {})
 }
@@ -60,12 +62,11 @@ function Request(opts, target, data) {
   headers["Content-Length"] = Buffer.byteLength(this.body)
   headers["Content-Type"] = Request.prototype.contentType
 
-  headers["X-Amz-Target"] = Request.prototype.target + target
+  headers["X-Amz-Target"] = "DynamoDB_" + opts.version + "." + target
 }
 
 Request.prototype.method      = "POST"
 Request.prototype.path        = "/"
-Request.prototype.target      = "DynamoDB_20111205."
 Request.prototype.maxRetries  = 10
 Request.prototype.contentType = "application/x-amz-json-1.0"
 

@@ -37,11 +37,11 @@ This creates a database instance for the given DynamoDB region, which can be one
 
 The official region list can be found in the [AWS documentation](http://docs.amazonwebservices.com/general/latest/gr/rande.html#ddb_region).
 
-You can also pass an object in here with `host`, `port`, `region` and/or
+You can also pass an object in here with `host`, `port`, `region`, `version`, and/or
 `credentials` parameters:
 
 ```javascript
-var db = dynamo.createClient({host: "localhost", port: 4567})
+var db = dynamo.createClient({host: "localhost", port: 4567, version: "20111205"})
 ```
 
 This is especially useful if you want to connect to a mock DynamoDB
