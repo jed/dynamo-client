@@ -3,7 +3,7 @@ dynamo-client
 
 [![Build Status](https://secure.travis-ci.org/jed/dynamo-client.png?branch=master)](http://travis-ci.org/jed/dynamo-client)
 
-This is a low-level client for accessing DynamoDB from node.js. It offers a simpler and more node-friendly API than [Amazon's SDK](http://aws.amazon.com/sdkfornodejs/).
+This is a low-level client for accessing DynamoDB from node.js. It offers a simpler and more node-friendly API than [Amazon's SDK](http://aws.amazon.com/sdkfornodejs/), in the style of [@mikeal](https://github.com/mikeal)'s popular [request](https://github.com/mikeal/request) library.
 
 Example
 -------
