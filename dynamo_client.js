@@ -84,7 +84,7 @@ Request.prototype.send = function(cb) {
 
       error = new Error
       error.name = (response.__type || '').split('#').pop()
-      error.message = response.message
+      error.message = response.message || response.Message
       error.statusCode = res.statusCode
 
       cb(error)
