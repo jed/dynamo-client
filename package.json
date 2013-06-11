@@ -18,11 +18,11 @@
   },
   "license": "MIT",
   "dependencies": {
-    "aws4": "~0.1.0"
+    "aws4": "~0.1.10"
   },
   "devDependencies": {
-    "should": "~0.6.3",
-    "mocha": "~1.3.0"
+    "should": "~1.2.2",
+    "mocha": "~1.10.0"
   },
   "scripts": {
     "pretest": "mocha ./test/setup.js -b -t 100s -R list",

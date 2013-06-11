@@ -1,7 +1,6 @@
 var dynamo = exports
 var http   = require("http")
 var https  = require("https")
-var crypto = require("crypto")
 var aws4   = require("aws4")
 
 function Database(region, credentials) {
@@ -10,6 +9,8 @@ function Database(region, credentials) {
     this.port = region.port
     this.region = region.region
     this.version = region.version // '20120810' or '20111205'
+    this.agent = region.agent
+    this.https = region.https
     credentials = region.credentials || credentials
   } else {
     if (/^[a-z]{2}\-[a-z]+\-\d$/.test(region))
@@ -54,6 +55,8 @@ function Request(opts, target, data) {
 
   this.host = opts.host
   this.port = opts.port
+  this.agent = opts.agent
+  this.http = opts.https ? https : http
 
   this.body = JSON.stringify(data)
 
@@ -71,21 +74,28 @@ Request.prototype.maxRetries  = 10
 Request.prototype.contentType = "application/x-amz-json-1.0"
 
 Request.prototype.send = function(cb) {
-  var request = http.request(this, function(res) {
+  var request = this.http.request(this, function(res) {
     var json = ""
 
     res.setEncoding("utf8")
 
     res.on("data", function(chunk){ json += chunk })
     res.on("end", function() {
-      var error, response = JSON.parse(json)
+      var response, error
 
-      if (res.statusCode == 200) return cb(null, response)
+      try { response = JSON.parse(json) } catch (e) { }
+
+      if (res.statusCode == 200 && response != null) return cb(null, response)
 
       error = new Error
-      error.name = (response.__type || '').split('#').pop()
-      error.message = response.message || response.Message
       error.statusCode = res.statusCode
+      if (response != null) {
+        error.name = (response.__type || "").split("#").pop()
+        error.message = response.message || response.Message || JSON.stringify(response)
+      } else {
+        if (res.statusCode == 413) json = "Request Entity Too Large"
+        error.message = "HTTP/1.1 " + res.statusCode + " " + json
+      }
 
       cb(error)
     })

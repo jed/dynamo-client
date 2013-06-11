@@ -64,12 +64,40 @@ describe("Database", function() {
       var db = dynamo.createClient({host: "myhost", port: 8080, region: "myregion"})
       db.port.should.equal(8080)
     })
+    it("should have correct version", function() {
+      var db = dynamo.createClient({version: "20111205"})
+      db.version.should.equal("20111205")
+    })
+    it("should have correct agent", function() {
+      var db = dynamo.createClient({agent: false})
+      db.agent.should.equal(false)
+    })
+    it("should have correct https", function() {
+      var db = dynamo.createClient({https: true})
+      db.https.should.equal(true)
+    })
   })
 
   describe("created with partial options", function() {
     it("should have default region", function() {
       var db = dynamo.createClient({host: "myhost", port: 8080})
       db.region.should.equal("us-east-1")
+    })
+    it("should have default host", function() {
+      var db = dynamo.createClient({region: "ap-southeast-2"})
+      db.host.should.equal("dynamodb.ap-southeast-2.amazonaws.com")
+    })
+    it("should have default version", function() {
+      var db = dynamo.createClient({region: "ap-southeast-2"})
+      db.version.should.equal("20120810")
+    })
+    it("should have default agent", function() {
+      var db = dynamo.createClient({region: "ap-southeast-2"})
+      should.strictEqual(undefined, db.agent)
+    })
+    it("should have default https", function() {
+      var db = dynamo.createClient({region: "ap-southeast-2"})
+      should.strictEqual(undefined, db.https)
     })
   })
 
