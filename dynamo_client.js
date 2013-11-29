@@ -81,13 +81,12 @@ Request.prototype.send = function(cb) {
 
     res.on("data", function(chunk){ json += chunk })
     res.on("end", function() {
-      var response, error
+      var response
 
       try { response = JSON.parse(json) } catch (e) { }
 
       if (res.statusCode == 200 && response != null) return cb(null, response)
 
-      error = new Error
       error.statusCode = res.statusCode
       if (response != null) {
         error.name = (response.__type || "").split("#").pop()
@@ -99,7 +98,7 @@ Request.prototype.send = function(cb) {
 
       cb(error)
     })
-  })
+  }), error = new Error
 
   request.on("error", cb)
 
