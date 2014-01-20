@@ -105,7 +105,7 @@ Request.prototype.send = function(cb) {
       cb(error)
     })
   })
-  
+
   var error = new Error
 
   request.on("error", cb)
