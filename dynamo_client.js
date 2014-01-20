@@ -61,6 +61,11 @@ function Request(opts, target, data) {
 
   this.body = JSON.stringify(data)
 
+  this.method      = this.method
+  this.path        = this.path
+  this.maxRetries  = this.maxRetries
+  this.contentType = this.contentType
+
   headers["Host"] = this.host
   headers["Date"] = new Date().toUTCString()
   headers["Content-Length"] = Buffer.byteLength(this.body)
