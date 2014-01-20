@@ -55,8 +55,9 @@ function Request(opts, target, data) {
 
   this.host = opts.host
   this.port = opts.port
-  this.agent = opts.agent
   this.http = opts.https ? https : http
+
+  if ("agent" in opts) this.agent = opts.agent
 
   this.body = JSON.stringify(data)
 
