@@ -61,10 +61,10 @@ function Request(opts, target, data) {
 
   this.body = JSON.stringify(data)
 
-  this.method      = this.method
-  this.path        = this.path
-  this.maxRetries  = this.maxRetries
-  this.contentType = this.contentType
+  this.method      = Request.prototype.method
+  this.path        = Request.prototype.path
+  this.maxRetries  = Request.prototype.maxRetries
+  this.contentType = Request.prototype.contentType
 
   headers["Host"] = this.host
   headers["Date"] = new Date().toUTCString()
