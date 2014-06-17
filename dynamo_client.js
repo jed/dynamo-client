@@ -27,6 +27,11 @@ function Database(region, credentials) {
 }
 
 Database.prototype.request = function(target, data, cb) {
+
+  if (target.indexOf('Table') >= 0 && !data.ReturnConsumedCapacity) {
+    data.ReturnedConsumedCapacity = "TOTAL";
+  }
+
   !function retry(database, i) {
     var req = new Request(database, target, data || {})
 
