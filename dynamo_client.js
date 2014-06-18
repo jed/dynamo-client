@@ -68,7 +68,7 @@ Database.prototype.request = function(target, data, cb) {
             data.ConsumedCapacity &&
             data.ConsumedCapacity.TableName) {
           console.log("measure#dynamo." + data.ConsumedCapacity.TableName + "." +
-                      OperationType[target] || 'unknown' + "=" +
+                      (OperationType[target] || 'unknown') + "=" +
                       data.ConsumedCapacity.CapacityUnits || 0);
         }
         cb(null, data);
