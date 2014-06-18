@@ -3,6 +3,17 @@ var http   = require("http")
 var https  = require("https")
 var aws4   = require("aws4")
 
+var OperationType = {
+  BatchGetItem: 'read',
+  BatchWriteItem: 'write',
+  DeleteItem: 'write',
+  GetItem: 'read',
+  PutItem: 'write',
+  Query: 'read',
+  Scan: 'read',
+  UpdateItem: 'write'
+};
+
 function Database(region, credentials) {
   if (typeof region === "object") {
     this.host = region.host
@@ -27,6 +38,11 @@ function Database(region, credentials) {
 }
 
 Database.prototype.request = function(target, data, cb) {
+
+  if (target.indexOf('Table') == -1 && !data.ReturnConsumedCapacity) {
+    data.ReturnConsumedCapacity = "TOTAL";
+  }
+
   !function retry(database, i) {
     var req = new Request(database, target, data || {})
 
@@ -39,13 +55,24 @@ Database.prototype.request = function(target, data, cb) {
           err.name == "ProvisionedThroughputExceededException" ||
           err.name == "ThrottlingException"
         )) {
+          console.log("measure#dynamo." + err.name + ".retry=1");
           setTimeout(retry, 50 << i, database, i + 1)
+        } else {
+          console.log("measure#dynamo.failed." + (err.name || "unknown") + "=1");
+          cb(err)
         }
-
-        else cb(err)
       }
 
-      else cb(null, data)
+      else {
+        if (data &&
+            data.ConsumedCapacity &&
+            data.ConsumedCapacity.TableName) {
+          console.log("measure#dynamo." + data.ConsumedCapacity.TableName + "." +
+                      OperationType[target] || 'unknown' + "=" +
+                      data.ConsumedCapacity.CapacityUnits || 0);
+        }
+        cb(null, data);
+      }
     })
   }(this, 0)
 }
