@@ -39,6 +39,8 @@ function Database(region, credentials) {
 
 Database.prototype.request = function(target, data, cb) {
 
+  var start = new Date().valueOf();
+
   if (target.indexOf('Table') == -1 && !data.ReturnConsumedCapacity) {
     data.ReturnConsumedCapacity = "TOTAL";
   }
@@ -64,13 +66,19 @@ Database.prototype.request = function(target, data, cb) {
       }
 
       else {
+        var table_key = data.ConsumedCapacity.TableName + "." +
+          (OperationType[target] || 'unknown'),
+        elapsed = (start - new Date().valueOf()) / 1000;
+
         if (data &&
             data.ConsumedCapacity &&
             data.ConsumedCapacity.TableName) {
-          console.log("measure#dynamo." + data.ConsumedCapacity.TableName + "." +
-                      (OperationType[target] || 'unknown') + "=" +
+
+          console.log("measure#dynamo." + table_key + "=" +
                       data.ConsumedCapacity.CapacityUnits || 0);
         }
+
+        console.log("measure#dynamo.time." + table_key + "=" + elapsed);
         cb(null, data);
       }
     })
