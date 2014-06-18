@@ -3,6 +3,17 @@ var http   = require("http")
 var https  = require("https")
 var aws4   = require("aws4")
 
+var OperationType = {
+  BatchGetItem: 'read',
+  BatchWriteItem: 'write',
+  DeleteItem: 'write',
+  GetItem: 'read',
+  PutItem: 'write',
+  Query: 'read',
+  Scan: 'read',
+  UpdateItem: 'write'
+};
+
 function Database(region, credentials) {
   if (typeof region === "object") {
     this.host = region.host
@@ -53,7 +64,16 @@ Database.prototype.request = function(target, data, cb) {
         }
       }
 
-      else cb(null, data)
+      else {
+        if (data &&
+            data.ConsumedCapacity &&
+            data.ConsumedCapacity.TableName) {
+          console.log("count#dynamo." + data.ConsumedCapacity.TableName + "." +
+                      OperationType[target] || 'unknown' + "=" +
+                      data.ConsumedCapacity.CapacityUnits || 0);
+        }
+        cb(null, data);
+      }
     })
   }(this, 0)
 }
