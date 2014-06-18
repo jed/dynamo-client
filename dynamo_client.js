@@ -66,7 +66,7 @@ Database.prototype.request = function(target, data, cb) {
       }
 
       else {
-        var elapsed = (start - new Date().valueOf()) / 1000;
+        var elapsed = (new Date().valueOf() - start) / 1000;
 
         if (data &&
             data.ConsumedCapacity &&
