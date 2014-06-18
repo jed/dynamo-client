@@ -55,7 +55,6 @@ Database.prototype.request = function(target, data, cb) {
           err.name == "ProvisionedThroughputExceededException" ||
           err.name == "ThrottlingException"
         )) {
-          console.log("count#dynamo." + err.name + ".retry." + i + "=1");
           console.log("count#dynamo." + err.name + ".retry=1");
           setTimeout(retry, 50 << i, database, i + 1)
         } else {
