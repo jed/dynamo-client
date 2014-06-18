@@ -55,10 +55,10 @@ Database.prototype.request = function(target, data, cb) {
           err.name == "ProvisionedThroughputExceededException" ||
           err.name == "ThrottlingException"
         )) {
-          console.log("count#dynamo." + err.name + ".retry=1");
+          console.log("measure#dynamo." + err.name + ".retry=1");
           setTimeout(retry, 50 << i, database, i + 1)
         } else {
-          console.log("count#dynamo.failed." + (err.name || "unknown") + "=1");
+          console.log("measure#dynamo.failed." + (err.name || "unknown") + "=1");
           cb(err)
         }
       }
@@ -67,7 +67,7 @@ Database.prototype.request = function(target, data, cb) {
         if (data &&
             data.ConsumedCapacity &&
             data.ConsumedCapacity.TableName) {
-          console.log("count#dynamo." + data.ConsumedCapacity.TableName + "." +
+          console.log("measure#dynamo." + data.ConsumedCapacity.TableName + "." +
                       OperationType[target] || 'unknown' + "=" +
                       data.ConsumedCapacity.CapacityUnits || 0);
         }
