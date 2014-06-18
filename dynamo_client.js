@@ -40,7 +40,7 @@ function Database(region, credentials) {
 Database.prototype.request = function(target, data, cb) {
 
   if (target.indexOf('Table') == -1 && !data.ReturnConsumedCapacity) {
-    data.ReturnedConsumedCapacity = "TOTAL";
+    data.ReturnConsumedCapacity = "TOTAL";
   }
 
   !function retry(database, i) {
