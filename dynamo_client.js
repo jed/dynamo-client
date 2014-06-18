@@ -66,19 +66,19 @@ Database.prototype.request = function(target, data, cb) {
       }
 
       else {
-        var table_key = data.ConsumedCapacity.TableName + "." +
-          (OperationType[target] || 'unknown'),
-        elapsed = (start - new Date().valueOf()) / 1000;
+        var elapsed = (start - new Date().valueOf()) / 1000;
 
         if (data &&
             data.ConsumedCapacity &&
             data.ConsumedCapacity.TableName) {
 
-          console.log("measure#dynamo." + table_key + "=" +
+          console.log("measure#dynamo." + data.ConsumedCapacity.TableName + "." +
+                      (OperationType[target] || 'unknown') + "=" +
                       data.ConsumedCapacity.CapacityUnits || 0);
         }
 
-        console.log("measure#dynamo.time." + table_key + "=" + elapsed);
+        console.log("measure#dynamo.time." +
+                    (OperationType[target] || 'unknown') + "=" + elapsed);
         cb(null, data);
       }
     })
