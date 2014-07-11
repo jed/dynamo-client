@@ -3,6 +3,8 @@ var http   = require("http")
 var https  = require("https")
 var aws4   = require("aws4")
 
+var EventEmitter = require("events").EventEmitter;
+
 var OperationType = {
   BatchGetItem: 'read',
   BatchWriteItem: 'write',
@@ -35,11 +37,16 @@ function Database(region, credentials) {
   if (!this.version) this.version = "20120810"
 
   this.credentials = new Credentials(credentials || {})
+  this.events = new EventEmitter();
+}
+
+Database.prototype.emit = function(name, data) {
+  return this.events.emit(name, data);
 }
 
 Database.prototype.request = function(target, data, cb) {
-
-  var start = new Date().valueOf();
+  var self = this,
+      hrstart = process.hrtime();
 
   if (target.indexOf('Table') == -1 && !data.ReturnConsumedCapacity) {
     data.ReturnConsumedCapacity = "TOTAL";
@@ -52,33 +59,36 @@ Database.prototype.request = function(target, data, cb) {
 
     req.send(function(err, data) {
       if (err) {
+        self.emit('request.error', err);
+
         if (i < Request.prototype.maxRetries && (
           err.statusCode >= 500 ||
           err.name == "ProvisionedThroughputExceededException" ||
           err.name == "ThrottlingException"
         )) {
-          console.log("measure#dynamo." + err.name + ".retry=1");
+          self.emit('request.retry', err.name);
           setTimeout(retry, 50 << i, database, i + 1)
         } else {
-          console.log("measure#dynamo.failed." + (err.name || "unknown") + "=1");
+          self.emit('request.failure', err.name || "unknown");
           cb(err)
         }
-      }
+      } else {
+        var hrend = process.hrtime(hrstart);
+        var opType = OperationType[target] || 'unknown';
 
-      else {
-        var elapsed = (new Date().valueOf() - start) / 1000;
-
-        if (data &&
-            data.ConsumedCapacity &&
-            data.ConsumedCapacity.TableName) {
-
-          console.log("measure#dynamo." + data.ConsumedCapacity.TableName + "." +
-                      (OperationType[target] || 'unknown') + "=" +
-                      data.ConsumedCapacity.CapacityUnits || 0);
+        if (data && data.ConsumedCapacity && data.ConsumedCapacity.TableName) {
+          self.emit('request.consumedcapacity', {
+            type: opType,
+            table: data.ConsumedCapacity.TableName,
+            consumed: data.ConsumedCapacity.CapacityUnits || 0
+          });
         }
 
-        console.log("measure#dynamo.time." +
-                    (OperationType[target] || 'unknown') + "=" + elapsed);
+        self.emit('request.time', {
+          type: opType,
+          time: hrend
+        });
+
         cb(null, data);
       }
     })
