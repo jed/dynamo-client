@@ -3,6 +3,19 @@ var http   = require("http")
 var https  = require("https")
 var aws4   = require("aws4")
 
+var EventEmitter = require("events").EventEmitter;
+
+var OperationType = {
+  BatchGetItem: 'read',
+  BatchWriteItem: 'write',
+  DeleteItem: 'write',
+  GetItem: 'read',
+  PutItem: 'write',
+  Query: 'read',
+  Scan: 'read',
+  UpdateItem: 'write'
+};
+
 function Database(region, credentials) {
   if (typeof region === "object") {
     this.host = region.host
@@ -24,9 +37,21 @@ function Database(region, credentials) {
   if (!this.version) this.version = "20120810"
 
   this.credentials = new Credentials(credentials || {})
+  this.events = new EventEmitter();
+}
+
+Database.prototype.emit = function(name, data) {
+  return this.events.emit(name, data);
 }
 
 Database.prototype.request = function(target, data, cb) {
+  var self = this,
+      hrstart = process.hrtime();
+
+  if (target.indexOf('Table') == -1 && !data.ReturnConsumedCapacity) {
+    data.ReturnConsumedCapacity = "TOTAL";
+  }
+
   !function retry(database, i) {
     var req = new Request(database, target, data || {})
 
@@ -34,18 +59,38 @@ Database.prototype.request = function(target, data, cb) {
 
     req.send(function(err, data) {
       if (err) {
+        self.emit('request.error', err);
+
         if (i < Request.prototype.maxRetries && (
           err.statusCode >= 500 ||
           err.name == "ProvisionedThroughputExceededException" ||
           err.name == "ThrottlingException"
         )) {
+          self.emit('request.retry', err.name);
           setTimeout(retry, 50 << i, database, i + 1)
+        } else {
+          self.emit('request.failure', err.name || "unknown");
+          cb(err)
+        }
+      } else {
+        var hrend = process.hrtime(hrstart);
+        var opType = OperationType[target] || 'unknown';
+
+        if (data && data.ConsumedCapacity && data.ConsumedCapacity.TableName) {
+          self.emit('request.consumedcapacity', {
+            type: opType,
+            table: data.ConsumedCapacity.TableName,
+            consumed: data.ConsumedCapacity.CapacityUnits || 0
+          });
         }
 
-        else cb(err)
-      }
+        self.emit('request.time', {
+          type: opType,
+          time: hrend
+        });
 
-      else cb(null, data)
+        cb(null, data);
+      }
     })
   }(this, 0)
 }
