@@ -1,3 +1,5 @@
+# This library is deprecated, use AWS's [DocumentClient](http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html) instead.
+
 dynamo-client
 -------------
 
