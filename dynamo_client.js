@@ -84,8 +84,8 @@ Request.prototype.send = function(cb) {
     var json = ""
 
     res.setEncoding("utf8")
-
-    res.on("data", function(chunk){ json += chunk })
+	//readable supported in stream 2. This shall work for huge data.
+    res.on("readable", function(chunk){ json += chunk })
     res.on("end", function() {
       var response
 
